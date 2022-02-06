@@ -22,8 +22,8 @@ IS_SWITCHED = False
 REVOLUTIONS = 0
 START_TIME = time.time()
 START_DATE = datetime.datetime.now()
-TIME_STAMPS = [START_TIME]
-DATE_STAMPS = [START_DATE]
+TIME_STAMPS = [0]
+DATE_STAMPS = [str(START_DATE)]
 
 def sensorCallback(channel):
     '''
@@ -43,7 +43,7 @@ def sensorCallback(channel):
         if not IS_SWITCHED:
             REVOLUTIONS += 1
             TIME_STAMPS.append(time.time() - START_TIME)
-            DATE_STAMPS.append(datetime.datetime.now())
+            DATE_STAMPS.append(str(datetime.datetime.now()))
 
         IS_SWITCHED = True
         
@@ -51,6 +51,21 @@ def sensorCallback(channel):
         # print("Sensor LOW " + stamp)
 
     # print(f'Has the switch been flipped? {IS_SWITCHED}')
+
+def saveCSV(distReadings):
+    '''
+    Save a csv file with the current date as the file name
+    '''
+    print('Attempting to save a CSV file....')
+    fileName = str(datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")) + '_gus_data.csv'
+    dataHeaders = ['date', 'elapsed time (s)', 'dist (in)']
+    writeableData = zip(*[DATE_STAMPS, TIME_STAMPS, distReadings])
+    print(writeableData)
+    with open(fileName, 'w') as csvFile:
+        write = csv.writer(csvFile)
+
+        write.writerow(dataHeaders)
+        write.writerows(writeableData)
 
 def main():
     '''
@@ -87,15 +102,11 @@ def main():
         distReadings.append(distTraveled)
 
     # save a CSV of the readings
-    print('Attempting to save a CSV file....')
-    fileName = str(datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")) + '_gus_data.csv'
-    dataHeaders = ['date', 'elapsed time (s)', 'dist (in)']
-    writeableData = zip([DATE_STAMPS, TIME_STAMPS, distReadings])
-    with open(fileName, 'w') as csvFile:
-        write = csv.writer(csvFile)
+    saveCSV(distReadings)
 
-        write.writerow(dataHeaders)
-        write.writerows(writeableData)
+    # Output statistics summary
+    print(f'Gas traveled {distTraveled:.2f} inches in {TIME_STAMPS[-1]:.2f} seconds')
+    print(f'Number of readings aquired: {REVOLUTIONS}')
 
 if __name__ == "__main__":
     # Tell GPIO library to use GPIO references

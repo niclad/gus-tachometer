@@ -60,7 +60,8 @@ def saveCSV(distReadings):
     fileName = str(datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")) + '_gus_data.csv'
     dataHeaders = ['date', 'elapsed time (s)', 'dist (in)']
     writeableData = zip(*[DATE_STAMPS, TIME_STAMPS, distReadings])
-    print(writeableData)
+
+    # Open and write the CSV file
     with open(fileName, 'w') as csvFile:
         write = csv.writer(csvFile)
 

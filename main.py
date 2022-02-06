@@ -10,6 +10,7 @@
 A tachometer for a lil hedgehog
 '''
 
+import csv
 import datetime
 import math
 import time
@@ -19,8 +20,10 @@ import RPi.GPIO as GPIO
 GPIO_PIN = 17
 IS_SWITCHED = False
 REVOLUTIONS = 0
-TIME_STAMPS = []
 START_TIME = time.time()
+START_DATE = datetime.datetime.now()
+TIME_STAMPS = [START_TIME]
+DATE_STAMPS = [START_DATE]
 
 def sensorCallback(channel):
     '''
@@ -29,18 +32,25 @@ def sensorCallback(channel):
     global IS_SWITCHED
     global REVOLUTIONS
     global TIME_STAMPS
-    timestamp = time.time()
-    stamp = datetime.datetime.fromtimestamp(timestamp).strftime('%H:%M:%S')
+    # timestamp = time.time()
+    # stamp = datetime.datetime.fromtimestamp(timestamp).strftime('%H:%M:%S')
     if GPIO.input(channel):
+        IS_SWITCHED = False
+        
         # No magnet
-        print("Sensor HIGH " + stamp)
+        # print("Sensor HIGH " + stamp)
     else:
         if not IS_SWITCHED:
             REVOLUTIONS += 1
             TIME_STAMPS.append(time.time() - START_TIME)
+            DATE_STAMPS.append(datetime.datetime.now())
 
+        IS_SWITCHED = True
+        
         # Magnet
-        print("Sensor LOW " + stamp)
+        # print("Sensor LOW " + stamp)
+
+    # print(f'Has the switch been flipped? {IS_SWITCHED}')
 
 def main():
     '''
@@ -54,7 +64,7 @@ def main():
     secsInDay = secsInHr * 24
     timeElapsed = time.time() - START_TIME
 
-    wheelDiameter = 12 # in inches
+    wheelDiameter = 12 # in INCHES
     wheelCircum = wheelDiameter * math.pi * 2
     
     # loop checking for keyboard interrupt
@@ -68,6 +78,24 @@ def main():
     # Reset GPIO settings
     print('Cleaning GPIO')
     GPIO.cleanup()
+
+    # create the distance readings
+    distTraveled = 0 # in INCHES
+    distReadings = [distTraveled]
+    while distTraveled < (REVOLUTIONS * wheelCircum):
+        distTraveled += wheelCircum
+        distReadings.append(distTraveled)
+
+    # save a CSV of the readings
+    print('Attempting to save a CSV file....')
+    fileName = str(datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")) + '_gus_data.csv'
+    dataHeaders = ['date', 'elapsed time (s)', 'dist (in)']
+    writeableData = zip([DATE_STAMPS, TIME_STAMPS, distReadings])
+    with open(fileName, 'w') as csvFile:
+        write = csv.writer(csvFile)
+
+        write.writerow(dataHeaders)
+        write.writerows(writeableData)
 
 if __name__ == "__main__":
     # Tell GPIO library to use GPIO references

@@ -35,7 +35,8 @@ def sensorCallback(channel):
     # timestamp = time.time()
     # stamp = datetime.datetime.fromtimestamp(timestamp).strftime('%H:%M:%S')
     if GPIO.input(channel):
-        IS_SWITCHED = False
+        # IS_SWITCHED = False
+        pass
         
         # No magnet
         # print("Sensor HIGH " + stamp)
@@ -45,12 +46,27 @@ def sensorCallback(channel):
             TIME_STAMPS.append(time.time() - START_TIME)
             DATE_STAMPS.append(str(datetime.datetime.now()))
 
-        IS_SWITCHED = True
+        # IS_SWITCHED = True
         
         # Magnet
         # print("Sensor LOW " + stamp)
 
     # print(f'Has the switch been flipped? {IS_SWITCHED}')
+
+def convertDist(distReadings):
+    '''
+    Convert the array of distance readings in inches to miles and feet
+    '''
+    convertedReadingsFeet = []
+    convertedReadingsMiles = []
+    inchesInMile = 63360
+    inchesInFoot = 12
+
+    for reading in distReadings:
+        convertedReadingsFeet.append(reading / inchesInFoot)
+        convertedReadingsMiles.append(reading / inchesInMile)
+
+    return (convertedReadingsFeet, convertedReadingsMiles)
 
 def saveCSV(distReadings):
     '''
@@ -58,8 +74,11 @@ def saveCSV(distReadings):
     '''
     print('Attempting to save a CSV file....')
     fileName = str(datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")) + '_gus_data.csv'
-    dataHeaders = ['date', 'elapsed time (s)', 'dist (in)']
-    writeableData = zip(*[DATE_STAMPS, TIME_STAMPS, distReadings])
+    dataHeaders = ['date', 'elapsed time (s)', 'dist (in)', 'dist (ft)', 'dist (mi)']
+
+    ftReadings, miReadings = convertDist(distReadings)
+
+    writeableData = zip(*[DATE_STAMPS, TIME_STAMPS, distReadings, ftReadings, miReadings])
 
     # Open and write the CSV file
     with open(fileName, 'w') as csvFile:
